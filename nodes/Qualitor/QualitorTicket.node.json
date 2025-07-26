@@ -1,0 +1,18 @@
+{
+	"node": "n8n-nodes-base.QualitorTicket",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"category": ["Miscellaneous"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://www.qualitor.com.br/docs/8.10.08.20170713/integracao/index.html"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://www.qualitor.com.br/docs/8.10.08.20170713/integracao/index.html"
+			}
+		]
+	}
+}
