@@ -37,7 +37,7 @@
 			"dist/credentials/QualitorApi.credentials.js"
 		],
 		"nodes": [
-			"dist/nodes/Qualitor/QualitorTicket.node.js"
+			"dist/nodes/Qualitor/Qualitor.node.js"
 		]
 	},
 	"devDependencies": {

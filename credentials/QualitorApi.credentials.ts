@@ -7,10 +7,11 @@ export class QualitorApi implements ICredentialType {
 
   properties: INodeProperties[] = [
     {
-      displayName: 'WSDL URL',
-      name: 'wsdlUrl',
+      displayName: 'Qualitor Base URL',
+      name: 'baseUrl',
       type: 'string',
-      default: 'https://qualitor.example.com/ws/services/Ticket/WSTicket.wsdl',
+      default: '',
+      placeholder: 'https://qualitor.example.com/qualitor',
     },
 
     {
@@ -18,7 +19,7 @@ export class QualitorApi implements ICredentialType {
       name: 'companyId',
       type: 'number',
       default: 1,
-      description: 'The ID of the company to which the tickets belong',
+      description: 'The ID of the company to which the user belongs',
     },
 
     {
