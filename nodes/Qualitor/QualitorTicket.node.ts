@@ -7,7 +7,7 @@ import {
   NodeConnectionType,
 } from "n8n-workflow";
 
-import * as soap from 'soap';
+import * as qs from "qs";
 
 export class QualitorTicket implements INodeType {
   description: INodeTypeDescription = {
@@ -37,50 +37,55 @@ export class QualitorTicket implements INodeType {
         required: true,
         options: [
           {
-            name: 'Get All Tickets',
-            value: 'getAllTickets',
-            description: 'Get all tickets from Qualitor',
-          },
-          {
-            name: 'Get Ticket by ID',
-            value: 'getTicketById',
-            description: 'Get a ticket by its ID',
-          },
-          {
-            name: 'Update Ticket by ID',
-            value: 'updateTicketById',
-            description: 'Update a ticket by its ID',
+            name: 'Get Ticket',
+            value: 'getTicket',
+            description: 'Get ticket from Qualitor',
           },
         ],
-        default: 'getAllTickets',
+        default: 'getTicket',
       },
 
       {
-        displayName: 'Ticket ID',
-        name: 'ticketId',
-        type: 'string',
-        default: '',
-        placeholder: '12345',
-        description: 'ID of the ticket to retrieve or update',
-        displayOptions: {
-          show: {
-            operation: ['getTicketById', 'updateTicketById'],
-          },
-        },
-      },
-
-      {
-        displayName: 'Filters (JSON)',
+        displayName: 'Filters',
         name: 'filters',
-        type: 'json',
-        default: '{}',
-        placeholder: '{"cdsituacao": 2}',
-        description: 'JSON object containing filters for retrieving tickets',
+        type: 'collection',
+        placeholder: 'Add Filter',
+        default: {},
         displayOptions: {
           show: {
-            operation: ['getAllTickets'],
+            operation: ['getTicket'],
           },
         },
+        options: [
+          {
+            displayName: 'cdchamado',
+            name: 'cdchamado',
+            type: 'number',
+            default: null,
+            placeholder: '12345',
+          },
+          {
+            displayName: 'cdsituacao',
+            name: 'cdsituacao',
+            type: 'number',
+            default: null,
+            placeholder: '12345',
+          },
+          {
+            displayName: 'cdcliente',
+            name: 'cdcliente',
+            type: 'number',
+            default: null,
+            placeholder: '12345',
+          },
+          {
+            displayName: 'cdcategoria',
+            name: 'cdcategoria',
+            type: 'number',
+            default: null,
+            placeholder: '12345',
+          },
+        ],
       },
     ],
   };
@@ -90,25 +95,12 @@ export class QualitorTicket implements INodeType {
     const credentials = await this.getCredentials('qualitorApi');
     const { wsdlUrl, companyId, username, password } = credentials as IDataObject;
 
-    const client = await soap.createClientAsync(wsdlUrl as string);
-
-    client.on('request', (xml) => {
-  console.log('SOAP XML enviado:', xml);
-});
-
-    const [loginResponse] = await client.loginAsync({
-      login: username,
-      passwd: password,
-      company: companyId,
-    });
-
-    const rawToken = loginResponse?.result?.$value;
-    const authToken = typeof rawToken === 'string' ? rawToken.trim() : '';
-
-    console.log('AuthToken extraído:', JSON.stringify(authToken));
-    console.dir(loginResponse, { depth: null });
-
-    if (!authToken) throw new Error('Authentication failed. Please check your credentials.');
+    const query: Record<string, string> = {
+      user: username as string,
+      password: password as string,
+      company: companyId as string,
+      wsdl_file: 'wsticket.wsdl',
+    };
 
     const returnData: INodeExecutionData[] = [];
 
@@ -117,39 +109,44 @@ export class QualitorTicket implements INodeType {
 
       let response;
 
-      if (operation === 'getAllTickets') {
-        const filterObj = this.getNodeParameter('filters', i, {});
+      if (operation === 'getTicket') {
+        let filterObj = this.getNodeParameter('filters', i, {});
 
-        console.log('Filters:', filterObj);
+        if (Object.keys(filterObj).length > 0) {
+          const filtersString = Object.entries(filterObj)
+            .map(([key, value]) => `<${key}>${value}</${key}>`)
+            .join('');
+          
+          const xml = `
+            <wsqualitor>
+              <contents>
+                <data>
+                ${filtersString}
+                </data>
+              </contents>
+            </wsqualitor>
+          `.trim();
 
-        // const xmlFilters = Object.keys(filterObj).length > 0
-        //   ? Object.entries(filterObj).map(
-        //       ([key, value]) => `<${key}>${value}</${key}>`
-        //     ).join('')
-        //   : '';
+          console.log('XML Request:', xml);
 
-        const xmlValue = `
-<wsqualitor>
-  <contents>
-    <data>
-      <cdchamado>2</cdchamado>
-    </data>
-  </contents>
-</wsqualitor>
-`.trim();
-        
-        console.log('XML Value for Get All Tickets:', xmlValue);
+          query.input_xml = xml;
+        }
 
-        [response] = await client.getTicketAsync({
-          auth: '$1$undL1M9J$hrxPmaQ8CW5X4CXfTtsTg0',
-          xmlValue,
+        const queryString = qs.stringify({
+          ...query,
+          operation: 'getTicket',
+        });
+
+        response = await this.helpers.httpRequest.call(this, {
+          method: 'POST',
+          url: `${wsdlUrl}?${queryString}`,
         });
 
         console.log('Get All Tickets Response:', response);
-        
+
         returnData.push({
           json: {
-            result: response?.result || response,
+            data: response || undefined,
           },
         });
       };
