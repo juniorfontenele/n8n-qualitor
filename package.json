@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-qualitor",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "n8n Qualitor SOAP Api Node",
 	"keywords": [
 		"n8n-community-node-package",
